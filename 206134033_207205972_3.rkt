@@ -349,3 +349,8 @@ This question took us an average of 15 minutes.
               {union {scalar-mult 3 B}
                  {4 5 7 9 8 8 8}}}")
       =error> "eval: free identifier:")
+
+
+
+
+;; -----------------------need tests for 'run' , 'eval' , 'substS'-------------------------------
