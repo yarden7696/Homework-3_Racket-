@@ -49,6 +49,8 @@
 (test (remove-duplicates '(1)) => '(1))
 (test (remove-duplicates '()) => '())
 
+
+
 (: create-sorted-set : SET -> SET)
 (define (create-sorted-set l)
   (<-- fill in --> (sort l <)))
@@ -56,6 +58,9 @@
 (test (create-sorted-set '(3 4 5)) => '(3 4 5))
 (test (create-sorted-set '( 3 2 3 5 6)) => '(2 3 5 6))
 (test (create-sorted-set '()) => '())
+
+
+
 
 (: set-union : SET SET -> SET)
 (define (set-union A B)
