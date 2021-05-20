@@ -2,20 +2,22 @@
 
 #| role : we do all the assianment together |#
 
+ 
 ;; -----------------------------------Question 1------------------------------------------
+
 #| This question was not difficult for us and took us an average of 5 minutes
 
 <SOL> :: = { <NumList> }
         |  { scalar-mult <num> <SOL> }
-        |  { intersect <SOL> <SOL>}
-        |  { union <SOL> <SOL> } 
+        |  { intersect <SOL> <SOL>} ;; intersect between 2 SOLS
+        |  { union <SOL> <SOL> } ;; union  between 2 SOLS
         |  <id>
         |  { with {<id> <SOL> } <SOL> } ;; this should be a syntactic sugar
        
 <NumList> :: =  λ | <NUM> ;; where λ stands for the empty word, i.e., { } is the empty set
 
-;;we will create sqence of number by calling NUM that calling DIG
-;; as the example {1 3 4 1 4 }
+;;we will create sequence of numbers by calling NUM that create the sequence by calling DIG recursively
+;; like the example {1 3 4 1 4 }
 
  <DIG> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 
@@ -237,7 +239,7 @@ This question was not difficult for us and took us an average of half hour.
 (test (parseS "{union {1 2 3} {4 2 3}}") => (Union (Set '(1 2 3)) (Set '(4 2 3))))
 (test (parseS "{intersect {1 2 3} {4 2 3}}") => (Inter (Set '(1 2 3)) (Set '(4 2 3))))
 (test (parseS "{with S {intersect {1 2 3} {4 2 3}} {union S S}}") =error> "bad `with' syntax in")
-(test (parseS "{}") => (Set '()))
+(test (parseS "{}") => (Set '())) 
 (test (parseS "{{1 2 3} {4 2 3}}") =error> "bad syntax in")
 (test (parseS "{scalar-mult 3 {4 2 3}}") => (Smult 3 (Set '(4 2 3))))
 (test (parseS "{with {S {intersect {1 2 1 3 7 3} {union {1 2 3} {4 2 3}}}} {union S S}}") =>
@@ -248,7 +250,7 @@ This question was not difficult for us and took us an average of half hour.
 ;; -----------------------------------Question 4------------------------------------------
 ;; Substation 
 #|
-------------------------------------------------------
+
  Formal specs for `subst':
    (`Set' is a <NumList>, E, E1, E2 are <SOL>s, `x' is some <id>,
    `y' is a *different* <id>)
@@ -282,16 +284,23 @@ This question was not difficult for us and took us an average of 20 minutes.
      (WithS bound-id ;; variable 
            (substS named-expr from to) ;; value 
            (if (eq? bound-id from) ;; body
-            bound-body
+            bound-body 
             (substS bound-body from to)))]))
 
+(test(substS (parseS "{union {1 2 3} {4 2 3}}") 'x (parseS "{union {1 2 3} {4 2 3}}"))=> (Union (Set '(1 2 3)) (Set '(4 2 3))) )
+(test(substS (parseS "{intersect {1 2 3} {4 2 3}}") 'x (parseS "{intersect {1 2 3} {4 2 3}}"))=> (Inter (Set '(1 2 3)) (Set '(4 2 3))))
+(test(substS (parseS "{scalar-mult 3 {4 2 3}}") 'x (parseS "{scalar-mult 3 {4 2 3}}")) => (Smult 3 (Set '(4 2 3))))
+(test (substS(parseS "{with S {intersect {1 2 3} {4 2 3}} {union S S}}") 'S (parseS "{union {1 2 3} {4 2 3}}") ) =error> "bad `with' syntax in")
+(test(substS (parseS "{with {S {intersect {1 2 1 3 7 3} {union {1 2 3} {4 2 3}}}} {union S S}}") 'x
+             (parseS "{with {S {intersect {1 2 1 3 7 3} {union {1 2 3} {4 2 3}}}} {union S S}}")) =>
+(WithS 'S (Inter (Set '(1 2 1 3 7 3)) (Union (Set '(1 2 3)) (Set '(4 2 3)))) (Union (IdS 'S) (IdS 'S))))
+
      
-    
 
 ;; -----------------------------------Question 5------------------------------------------
 ;; Evaluation 
 #|
-------------------------------------------------------
+
 Evaluation rules:
     ;; Please complete the missing parts in the formal specifications below
 
@@ -335,6 +344,15 @@ This question took us an average of 15 minutes.
     [(IdS name) (error 'eval "free identifier: ~s" name)])) ;; case IdS
 
 
+(test (eval (Set '(1 3 4 1 4 4 2 3 4 1 2 3))) =>  '(1 2 3 4)) 
+(test (eval (Union (Set '(1 2 3)) (Set '(4 2 3)))) => '(1 2 3 4))
+(test (eval (Union (Set '(1 2 3)) (Set '(4 3 2)))) => '(1 2 3 4))
+(test (eval (Inter (Set '(1 2 3)) (Set '(4 3 2)))) => '(2 3))
+(test (eval (Inter (Set '(3 1 2)) (Set '(4 2 3)))) => '(2 3))
+(test (eval (WithS 'S (Inter (Set '(1 2 3)) (Set '(4 3 2))) (Union (IdS 'S) (IdS 'S)))) => '(2 3))
+(test (eval (WithS 'S (Inter (Set '(1 2 3 5)) (Set '(4 3 2 5))) (Inter (IdS 'S) (Set '(5 3))))) => '(3 5))
+(test (eval (Smult 3 (Set '(4 2 3)))) => '(6 9 12))
+
 
 (: run : String -> SET)
 ;; evaluate a SOL program contained in a string
@@ -349,8 +367,16 @@ This question took us an average of 15 minutes.
               {union {scalar-mult 3 B}
                  {4 5 7 9 8 8 8}}}")
       =error> "eval: free identifier:")
+(test (run "{1 2 3  4 1 4  4 2 3 4 1 2 3}") => '(1 2 3 4))
+(test (run "{union {1 2 3} {4 2 3}}") => '(1 2 3 4)) 
+(test (run "{with {S {intersect {1 2 3} {4 2 3}}}
+                 {with {x {4 5 7 6 9 8 8 8}}
+                    {union x S}}}")
+      => '(2 3 4 5 6 7 8 9))
+(test (run "{set S {union x S}}") =error> "bad syntax in" )
+(test (run "{id x}")=error> "parse-sexprS: bad syntax in")
 
 
 
 
-;; -----------------------need tests for 'run' , 'eval' , 'substS'-------------------------------
+
