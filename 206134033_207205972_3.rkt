@@ -290,10 +290,16 @@ This question was not difficult for us and took us an average of 20 minutes.
 (test(substS (parseS "{union {1 2 3} {4 2 3}}") 'x (parseS "{union {1 2 3} {4 2 3}}"))=> (Union (Set '(1 2 3)) (Set '(4 2 3))) )
 (test(substS (parseS "{intersect {1 2 3} {4 2 3}}") 'x (parseS "{intersect {1 2 3} {4 2 3}}"))=> (Inter (Set '(1 2 3)) (Set '(4 2 3))))
 (test(substS (parseS "{scalar-mult 3 {4 2 3}}") 'x (parseS "{scalar-mult 3 {4 2 3}}")) => (Smult 3 (Set '(4 2 3))))
-(test (substS(parseS "{with S {intersect {1 2 3} {4 2 3}} {union S S}}") 'S (parseS "{union {1 2 3} {4 2 3}}") ) =error> "bad `with' syntax in")
 (test(substS (parseS "{with {S {intersect {1 2 1 3 7 3} {union {1 2 3} {4 2 3}}}} {union S S}}") 'x
              (parseS "{with {S {intersect {1 2 1 3 7 3} {union {1 2 3} {4 2 3}}}} {union S S}}")) =>
 (WithS 'S (Inter (Set '(1 2 1 3 7 3)) (Union (Set '(1 2 3)) (Set '(4 2 3)))) (Union (IdS 'S) (IdS 'S))))
+(test (substS(parseS "{with {x {intersect {2 3 4} {2 1}}} 
+                 {with {x {4 5 6 7 7 6 6 8 9}}
+                    {intersect x x}}}") 'x (parseS "{with {x {intersect {2 3 4} {2 1}}} 
+                 {with {x {4 5 6 7 7 6 6 8 9}}
+                    {intersect x x}}}") )
+      => (WithS 'x (Inter (Set '(2 3 4)) (Set '(2 1)))
+                (WithS 'x (Set '(4 5 6 7 7 6 6 8 9)) (Inter (IdS 'x) (IdS 'x)))))
 
      
 
