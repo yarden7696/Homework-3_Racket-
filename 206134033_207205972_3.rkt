@@ -2,8 +2,9 @@
 
 #| role : we do all the assianment together |#
 
+;;-----------------------------------------------Part A------------------------------------------------------
  
-;; -----------------------------------Question 1------------------------------------------
+;; ---------------------------------------------Question 1---------------------------------------------------
 
 #| This question was not difficult for us and took us an average of 5 minutes
 
@@ -385,5 +386,143 @@ This question took us an average of 15 minutes.
 
 
 
+
+;;-----------------------------------------------Part B------------------------------------------------------
+
+(define-type WAE
+  [Num Number]
+  [Add WAE WAE]
+  [Sub WAE WAE]
+  [Mul WAE WAE]
+  [Div WAE WAE]
+  [Id Symbol]
+  [With Symbol WAE WAE])
+
+
+
+ ;; to convert s-expressions into WAEs
+(: parse-sexpr : Sexpr -> WAE)
+(define (parse-sexpr sexpr)
+   (match sexpr
+     [(number: n) (Num n)]
+     [(symbol: name) (Id name)]
+     [(list 'with (list (symbol: name) named) body)
+      (With name (parse-sexpr named) (parse-sexpr body))]
+     [(list '+ lhs rhs) (Add (parse-sexpr lhs) (parse-sexpr rhs))]
+     [(list '- lhs rhs) (Sub (parse-sexpr lhs) (parse-sexpr rhs))]
+     [(list '* lhs rhs) (Mul (parse-sexpr lhs) (parse-sexpr rhs))]
+     [(list '/ lhs rhs) (Div (parse-sexpr lhs) (parse-sexpr rhs))]
+     [else (error 'parse-sexpr "bad syntax in ~s" sexpr)]))
+
+ 
+ ;; parses a string containing a WAE expression to a WAE AST
+(: parse : String -> WAE)
+(define (parse str)
+ (parse-sexpr (string->sexpr str)))
+
+(test(parse "{+ {- 3 4 } 7}")=>(Add(Sub(Num 3)(Num 4)) (Num 7 )))
+(test(parse "3")=>(Num 3))
+(test(parse "{with {x {+ 4 2 }}{* x x}}")=>(With 'x (Add (Num 4)(Num 2))(Mul (Id 'x)(Id 'x))))
+(test(parse "{+ {/ 12 3 } 7}")=>(Add(Div(Num 12)(Num 3)) (Num 7 )))
+(test(parse "{4+3}")=error> "bad syntax in") 
+
+
+
+;; subst replaces all instances of the free instances in the WAE
+(: subst : WAE Symbol WAE -> WAE)
+(define (subst expr from to)
+  (cases expr
+    [(Num n) expr] 
+    [(Add l r) (Add (subst l from to) (subst r from to))]
+    [(Sub l r) (Sub (subst l from to) (subst r from to))]
+    [(Mul l r) (Mul (subst l from to) (subst r from to))]
+    [(Div l r) (Div (subst l from to) (subst r from to))]
+    [(Id name) (if (eq? name from) to expr)]
+    [(With bound-id named-expr bound-body)
+     (With bound-id
+           (subst named-expr from to)
+           (if (eq? bound-id from)
+               bound-body
+               (subst bound-body from to)))]))
+
+(test (subst (Mul (Id 'x) (Id 'x)) 'x (Num 6)) => (Mul (Num 6) (Num 6)))
+(test (subst (Num 5) 'x (Num 6)) => (Num 5))
+(test (subst (With 'x (Num 3) (Id 'x))'x (Num 6)) =>(With 'x (Num 3)(Id 'x)))
+(test (subst (Div (Id 'x) (Id 'x)) 'x (Num 6)) => (Div (Num 6) (Num 6)))
+
+
+
+#|
+Input : (Listof Symbol)  
+output : (Listof Symbol)  
+This function gets (Listof Symbol) and delete the all elements that appear two times and more.
+|#
+(: remove-dup-help : (Listof Symbol) (Listof Symbol)  -> (Listof Symbol))
+(define (remove-dup-help l res)
+  (if (null? l)
+      res
+  (if (contains (first l) (rest l))
+      (remove-dup-help (rest l) res) ;; element appears two times and more
+   (remove-dup-help (rest l) (append res (cons (first l) '())))))) ;; element appears only one time
+
+(: remove-duplicates-smbl : (Listof Symbol)  -> (Listof Symbol))
+(define (remove-duplicates-smbl t)
+  (reverse (remove-dup-help (reverse t) '())))
+
+
+#|
+Input : Symbol (Listof Symbol)  
+output : Boolean  
+This function checks if a symbol already appears in the list.
+If so - we will return true
+Otherwise- false
+|#
+(: contains : Symbol (Listof Symbol)  -> Boolean)
+(define (contains smbl lst)
+  (if(null? lst)
+     #f
+     (if (eq? (first lst) smbl) #t
+     (contains smbl (rest lst)))))
+
+
+
+(: freeInstanceList-help : WAE (Listof Symbol) -> (Listof Symbol))                                                 
+(define (freeInstanceList-help wae lst)
+  (cases wae
+    [(Num n) null]
+    [(Add l r) (append (freeInstanceList-help l lst) (freeInstanceList-help r lst))] ;; Add case
+    [(Sub l r) (append (freeInstanceList-help l lst) (freeInstanceList-help r lst))];; Sub case
+    [(Mul l r) (append (freeInstanceList-help l lst) (freeInstanceList-help r lst))];; Mul cal
+    [(Div l r) (append (freeInstanceList-help l lst) (freeInstanceList-help r lst))];; Div case
+    [(With bound-id named-expr bound-body);; With case
+     (append (freeInstanceList-help named-expr lst)
+         (freeInstanceList-help (subst bound-body
+                                   bound-id 
+                                   (Num 0)) lst))]
+    [(Id name) (append lst (cons name '()))])) ;;Id case- we found free instance so we add him to the lst list
+
+
+#|
+Input : WAE
+output : (Listof Symbol) - all symbols that are free instances   
+This function recives WAE and returns for it a list of all its free instances.
+This function has an helper function called 'freeInstanceList-help' that recives the WAE and an empty list
+(the all free instances enter to the empty list).
+This question took us an average one hour (the hard part was understanding the instructions
+because they were not clear).
+|# 
+(: freeInstanceList : WAE -> (Listof Symbol))
+(define (freeInstanceList wae)
+  (remove-duplicates-smbl (freeInstanceList-help wae '())))
+  
+  
+   
+(test (freeInstanceList (parse "w")) => '(w))
+(test (freeInstanceList (Id 'w)) => '(w))
+(test (freeInstanceList (Mul (Id 'w) (Id 'c))) => '(w c))
+(test (freeInstanceList (parse "{with {xxx 2} {with {yyy 3} {+ {- xx y} z}}}")) => '(xx y z))
+(test (freeInstanceList (With 'x (Num 2) (Add (Id 'x) (Num 3)))) => '())
+(test (freeInstanceList (parse "{+ z {+ x z}}")) => '(z x))
+(test (freeInstanceList (Div (Id 'y) (Id 'd))) => '(y d))   
 
 
