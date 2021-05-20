@@ -165,14 +165,14 @@ This question was not difficult for us and took us an average of 5 minutes.
   (: mem-filter : Number -> Boolean)
   (define (mem-filter n)
     (ismember? n A))
-  (filter mem-filter B))
+  (sort (filter mem-filter B) <))
 
 (test (set-intersection '(3 4 5) '(3 4 5)) => '(3 4 5))
 (test (set-intersection '(3 4 5) '(3)) => '(3))
 (test (set-intersection '(3 4 5) '(1)) => '())
 (test (set-intersection '(3 4 6) '(3 4 5)) => '(3 4))
-(test (set-intersection '(3 4 6) '(6 3 4 5)) => '(6 3 4))
-(test (set-intersection '(4 3 6) '(6 3 4 5)) => '(6 3 4))
+(test (set-intersection '(3 4 6) '(6 3 4 5)) => '(3 4 6))
+(test (set-intersection '(4 3 6) '(6 3 4 5)) => '(3 4 6))
 
 
 #|
@@ -192,13 +192,14 @@ This question was not difficult for us and took us an average of 15 minutes.
 (define (set-smult n l)
   (if (null? l) ;; stop condition
       l
-  (cons (mul n (first l)) (set-smult n (rest l)))))
+  (sort (cons (mul n (first l)) (set-smult n (rest l))) < )))
 
 (test (set-smult 3 '(3 4 5)) => '(9 12 15))
 (test (set-smult 2 '()) => '())
 (test (set-smult 0 '(3 4 5)) => '(0 0 0))
 (test (set-smult -1 '(-3 -4 -5)) => '(3 4 5))
-(test (set-smult -1 '(3 4 5)) => '(-3 -4 -5))
+(test (set-smult -1 '(3 5 4)) => '(-5 -4 -3))
+(test (set-smult 3 '(3 5 4)) => '(9 12 15))
 
 ;; -----------------------------------Question 2------------------------------------------
 
